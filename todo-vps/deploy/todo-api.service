@@ -1,0 +1,24 @@
+# /etc/systemd/system/todo-api.service
+# Instalar con:
+#   sudo cp todo-api.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable todo-api
+#   sudo systemctl start todo-api
+
+[Unit]
+Description=API To-Do List (Node/Express)
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=deploy
+WorkingDirectory=/var/www/todo-app/backend
+EnvironmentFile=/var/www/todo-app/backend/.env
+ExecStart=/usr/bin/node server.js
+Restart=on-failure
+RestartSec=5
+StandardOutput=append:/var/log/todo-api/output.log
+StandardError=append:/var/log/todo-api/error.log
+
+[Install]
+WantedBy=multi-user.target

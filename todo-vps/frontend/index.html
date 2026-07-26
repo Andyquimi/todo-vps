@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>To-Do List — TP VPS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="container">
+    <h1>📋 Mis Tareas</h1>
+
+    <form id="task-form" class="task-form">
+      <input type="text" id="task-input" placeholder="Nueva tarea..." required maxlength="200">
+      <button type="submit">Agregar</button>
+    </form>
+
+    <input type="text" id="filter-input" class="filter-input" placeholder="🔍 Filtrar tareas en tiempo real...">
+
+    <ul id="task-list" class="task-list"></ul>
+
+    <p id="empty-state" class="empty-state" hidden>No hay tareas todavía.</p>
+    <p id="status-msg" class="status-msg" role="status"></p>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
