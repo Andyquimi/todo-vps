@@ -39,7 +39,12 @@ jobs:
             --exclude '.git' \
             --exclude '.github' \
             -e "ssh -i ~/.ssh/id_rsa" \
-            ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/todo-app/
+            ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/todo-app/ ; rc=$?
+          if [ $rc -ne 0 ] && [ $rc -ne 24 ]; then
+            echo "rsync falló con código real de error: $rc"
+            exit $rc
+          fi
+          echo "rsync completado (código $rc, 24 es aceptable)"
 
       - name: Instalar dependencias en el VPS y reiniciar el servicio
         run: |
