@@ -28,6 +28,14 @@ jobs:
           npm -v
 
 
+      - name: Verificar estructura del proyecto
+        run: |
+          echo "Contenido del proyecto:"
+          ls -la
+          echo "Backend:"
+          ls -la backend
+
+
       - name: Instalar dependencias backend
         working-directory: ./backend
         run: npm install --omit=dev
@@ -36,6 +44,26 @@ jobs:
       - name: Ejecutar pruebas
         working-directory: ./backend
         run: npm test --if-present
+
+
+      - name: Verificar Secrets
+        run: |
+          if [ -z "${{ secrets.VPS_HOST }}" ]; then
+            echo "ERROR: VPS_HOST no existe"
+            exit 1
+          fi
+
+          if [ -z "${{ secrets.VPS_USER }}" ]; then
+            echo "ERROR: VPS_USER no existe"
+            exit 1
+          fi
+
+          if [ -z "${{ secrets.VPS_SSH_KEY }}" ]; then
+            echo "ERROR: VPS_SSH_KEY no existe"
+            exit 1
+          fi
+
+          echo "Secrets encontrados correctamente"
 
 
       - name: Configurar SSH
@@ -51,20 +79,29 @@ jobs:
 
       - name: Probar conexion SSH
         run: |
-          ssh -i ~/.ssh/id_rsa \
+          ssh \
+          -i ~/.ssh/id_rsa \
+          -o StrictHostKeyChecking=no \
           ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
-          "echo Conexion correcta"
+          "echo Conexion SSH correcta"
+
+
+      - name: Crear carpeta destino VPS
+        run: |
+          ssh \
+          -i ~/.ssh/id_rsa \
+          ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+          "sudo mkdir -p /var/www/todo-app && sudo chown -R ${{ secrets.VPS_USER }}:${{ secrets.VPS_USER }} /var/www/todo-app"
 
 
       - name: Sincronizar archivos al VPS
         run: |
-
           rsync -avz \
-          --delete \
           --exclude node_modules \
           --exclude .git \
           --exclude .github \
-          -e "ssh -i ~/.ssh/id_rsa" \
+          --exclude .env \
+          -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
           ./ \
           ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/todo-app/
 
@@ -72,8 +109,11 @@ jobs:
       - name: Instalar dependencias y reiniciar API
         run: |
 
-          ssh -i ~/.ssh/id_rsa \
+          ssh \
+          -i ~/.ssh/id_rsa \
           ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} '
+
+          set -e
 
           cd /var/www/todo-app/backend
 
@@ -81,7 +121,9 @@ jobs:
 
           sudo systemctl restart todo-api
 
-          sleep 3
+          sleep 5
+
+          sudo systemctl status todo-api --no-pager
 
           curl -f http://127.0.0.1:3000/api/health
 
