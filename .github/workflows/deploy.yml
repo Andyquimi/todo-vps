@@ -2,59 +2,93 @@ name: Deploy To-Do App a VPS
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   build-and-deploy:
+
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout del codigo
-        uses: actions/checkout@v4
+
+      - name: Checkout codigo
+        uses: actions/checkout@v6
+
 
       - name: Configurar Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '22'
 
-      - name: Instalar dependencias del backend
+
+      - name: Verificar Node y npm
+        run: |
+          node -v
+          npm -v
+
+
+      - name: Instalar dependencias backend
         working-directory: ./backend
         run: npm install --omit=dev
 
-      - name: Ejecutar pruebas si existen
+
+      - name: Ejecutar pruebas
         working-directory: ./backend
         run: npm test --if-present
 
-      - name: Configurar clave SSH
+
+      - name: Configurar SSH
         run: |
           mkdir -p ~/.ssh
+
           echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/id_rsa
+
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts
+
+
+      - name: Probar conexion SSH
+        run: |
+          ssh -i ~/.ssh/id_rsa \
+          ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+          "echo Conexion correcta"
+
 
       - name: Sincronizar archivos al VPS
         run: |
-          set +e
-          rsync -avz --delete --exclude 'node_modules' --exclude '.git' --exclude '.github' -e "ssh -i ~/.ssh/id_rsa" ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/todo-app/
-          rc=$?
-          set -e
-          if [ $rc -ne 0 ] && [ $rc -ne 24 ]; then
-            echo "rsync fallo con codigo real de error: $rc"
-            exit $rc
-          fi
-          echo "rsync completado codigo $rc"
 
-      - name: Instalar dependencias en el VPS y reiniciar el servicio
+          rsync -avz \
+          --delete \
+          --exclude node_modules \
+          --exclude .git \
+          --exclude .github \
+          -e "ssh -i ~/.ssh/id_rsa" \
+          ./ \
+          ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/var/www/todo-app/
+
+
+      - name: Instalar dependencias y reiniciar API
         run: |
-          ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} '
-            set -e
-            cd /var/www/todo-app/backend
-            npm install --omit=dev
-            sudo systemctl restart todo-api
-            sleep 2
-            curl -f http://127.0.0.1:3000/api/health
+
+          ssh -i ~/.ssh/id_rsa \
+          ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} '
+
+          cd /var/www/todo-app/backend
+
+          npm install --omit=dev
+
+          sudo systemctl restart todo-api
+
+          sleep 3
+
+          curl -f http://127.0.0.1:3000/api/health
+
           '
 
-      - name: Notificar resultado
+
+      - name: Resultado
         if: always()
-        run: echo "Despliegue finalizado con estado ${{ job.status }}"
+        run: |
+          echo "Estado final: ${{ job.status }}"
