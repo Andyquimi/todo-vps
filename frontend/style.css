@@ -121,7 +121,6 @@ h1::before {
 }
  
 .task-form select { cursor: pointer; min-width: 108px; }
-.task-form input[type="date"] { min-width: 138px; color-scheme: dark; }
  
 .task-form button {
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
@@ -341,9 +340,6 @@ h1::before {
 .priority-badge.media { color: var(--p-mid); background: var(--p-mid-bg); }
 .priority-badge.baja { color: var(--p-low); background: var(--p-low-bg); }
  
-.due-date { font-size: 0.75rem; color: var(--text-mute); display: flex; align-items: center; gap: 0.3rem; }
-.due-date.overdue { color: var(--p-high); font-weight: 600; }
- 
 .task-actions { display: flex; gap: 0.15rem; }
  
 .task-item button.icon-btn {
@@ -382,7 +378,6 @@ h1::before {
       <option value="media" selected>🟡 Media</option>
       <option value="baja">🟢 Baja</option>
     </select>
-    <input type="date" id="dueDateInput">
     <button type="submit">Agregar</button>
   </form>
  
@@ -423,7 +418,6 @@ let statusFilter = 'todas';
 const taskForm = document.getElementById('taskForm');
 const taskInput = document.getElementById('taskInput');
 const prioritySelect = document.getElementById('prioritySelect');
-const dueDateInput = document.getElementById('dueDateInput');
 const searchInput = document.getElementById('searchInput');
 const priorityFilter = document.getElementById('priorityFilter');
 const taskList = document.getElementById('taskList');
@@ -432,18 +426,6 @@ const emptyState = document.getElementById('emptyState');
 document.getElementById('todayLabel').textContent = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
  
 function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); }
- 
-function formatDate(iso) {
-  if (!iso) return null;
-  const [y, m, d] = iso.split('-');
-  return `${d}/${m}/${y}`;
-}
- 
-function isOverdue(task) {
-  if (!task.dueDate || task.completed) return false;
-  const today = new Date(); today.setHours(0,0,0,0);
-  return new Date(task.dueDate) < today;
-}
  
 function render() {
   const term = searchInput.value.trim().toLowerCase();
@@ -464,17 +446,12 @@ function render() {
     const li = document.createElement('li');
     li.className = `task-item priority-${task.priority}${task.completed ? ' completed' : ''}`;
  
-    const dueHtml = task.dueDate
-      ? `<span class="due-date${isOverdue(task) ? ' overdue' : ''}">📅 ${formatDate(task.dueDate)}</span>`
-      : '';
- 
     li.innerHTML = `
       <input type="checkbox" ${task.completed ? 'checked' : ''} aria-label="Marcar como completada">
       <div class="task-body">
         <div class="task-title"></div>
         <div class="task-meta">
           <span class="priority-badge ${task.priority}">${task.priority}</span>
-          ${dueHtml}
         </div>
       </div>
       <div class="task-actions">
@@ -522,11 +499,9 @@ taskForm.addEventListener('submit', e => {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2),
     title,
     priority: prioritySelect.value,
-    dueDate: dueDateInput.value || null,
     completed: false
   });
   taskInput.value = '';
-  dueDateInput.value = '';
   prioritySelect.value = 'media';
   save(); render();
   taskInput.focus();
