@@ -46,7 +46,7 @@ jobs:
           fi
           echo "rsync completado (código $rc, 24 es aceptable)"
 
-      - name: Sincronizar archivos al VPS (rsync)
+                - name: Sincronizar archivos al VPS (rsync)
         run: |
           set +e
           rsync -avz --delete \
@@ -58,7 +58,7 @@ jobs:
           rc=$?
           set -e
           if [ $rc -ne 0 ] && [ $rc -ne 24 ]; then
-            echo "rsync fallo con codigo real de error: $rc"
+            echo "rsync falló con código real de error: $rc"
             exit $rc
           fi
-          echo "rsync completado (codigo $rc, 24 es aceptable)"
+          echo "rsync completado (código $rc, 24 es aceptable)"
