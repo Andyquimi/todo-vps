@@ -19,10 +19,8 @@ jobs:
 
       - name: Instalar dependencias del backend
         working-directory: ./backend
-        run: npm ci --omit=dev
+        run: npm install --omit=dev
 
-      # Si agregas tests (ej. con jest/supertest), se ejecutan aquí
-      # y el deploy no continúa si fallan.
       - name: Ejecutar pruebas (si existen)
         working-directory: ./backend
         run: npm test --if-present
@@ -48,7 +46,7 @@ jobs:
           ssh -i ~/.ssh/id_rsa ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} '
             set -e
             cd /var/www/todo-app/backend
-            npm ci --omit=dev
+            npm install --omit=dev
             sudo systemctl restart todo-api
             sleep 2
             curl -f http://127.0.0.1:3000/api/health
