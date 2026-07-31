@@ -1,5 +1,5 @@
 -- Ejecutar como el usuario postgres o con psql -U todo_user -d todo_db -f schema.sql
-
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE TABLE IF NOT EXISTS tasks (
     id          SERIAL PRIMARY KEY,
     title       VARCHAR(200) NOT NULL,

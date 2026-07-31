@@ -1,0 +1,10 @@
+**/node_modules
+.env
+**/.env
+*.log
+npm-debug.log*
+.git
+.github
+deploy/backup.sh
+GUIA_AZURE_Y_VPS.md
+GUIA_GOOGLE_CLOUD.md
