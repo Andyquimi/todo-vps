@@ -7,7 +7,10 @@ const pool = require('./db');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+app.use(cors({
+  origin: ['http://34.170.224.30'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+}));
 app.use(express.json());
 
 // Sirve el frontend estático (SPA) desde la misma app Node
@@ -50,6 +53,9 @@ app.post('/api/tasks', async (req, res) => {
     if (!title || !title.trim()) {
       return res.status(400).json({ error: 'El título es obligatorio' });
     }
+    if (title.trim().length > 200) {
+      return res.status(400).json({ error: 'El título no puede superar los 200 caracteres' });
+    }
     const result = await pool.query(
       'INSERT INTO tasks (title, completed) VALUES ($1, false) RETURNING *',
       [title.trim()]
@@ -70,6 +76,10 @@ app.put('/api/tasks/:id', async (req, res) => {
     const existing = await pool.query('SELECT * FROM tasks WHERE id = $1', [id]);
     if (existing.rows.length === 0) {
       return res.status(404).json({ error: 'Tarea no encontrada' });
+    }
+
+    if (title !== undefined && title.trim().length > 200) {
+      return res.status(400).json({ error: 'El título no puede superar los 200 caracteres' });
     }
 
     const current = existing.rows[0];
